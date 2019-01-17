@@ -20,6 +20,8 @@ var CHARA_SHOT_COLOR = 'rgba(0, 255, 0, 0.75)';
 var CHARA_SHOT_MAX_COUNT = 10; //画面上に出せるショット数の最大値の設定
 var ENEMY_COLOR = 'rgba(255, 0, 0, 0.75)';
 var ENEMY_MAX_COUNT = 10;
+var ENEMY_SHOT_COLOR = 'rgba(255, 0, 255, 0.75)';
+var ENEMY_SHOT_MAX_COUNT = 100;
 
 //- main ----------------------------------------------------
 window.onload = function () {
@@ -62,7 +64,12 @@ window.onload = function () {
     for (i = 0; i < ENEMY_MAX_COUNT; i++) {
         enemy[i] = new Enemy();
     }
-
+    
+    //敵機の弾の初期化
+    var enemyShot = new Array(ENEMY_SHOT_MAX_COUNT);
+    for(i = 0; i< ENEMY_SHOT_MAX_COUNT; i++){
+        enemyShot[i] = new EnemyShot();
+    }
 
     //ループ処理(レンダリング処理）を呼び出す
     (function () {
@@ -183,6 +190,25 @@ window.onload = function () {
                     0, Math.PI * 2, false
                 );
 
+                //ショットを打つかどうかパラメータの値からチェック
+                  //敵キャラの param プロパティはmoveメソッドが呼ばれるたび＋１される
+                  //つまり毎フレーム１づつ増えていく
+                  // enemy[i].param % 30 === 0   で３０フレームに一度処理される
+                if(enemy[i].param % 30 === 0){
+                    // エネミーショットを調査する
+                    for(j =0; j< ENEMY_SHOT_MAX_COUNT; j++){
+                        if(!enemyShot[j].alive){
+                            //エネミーショットを新規にセットする
+                            p = enemy[i].position.distance(chara.position);
+                            p.normalize();
+                            enemyShot[j].set(enemy[i].position, p, 5, 5);
+
+                            // １個出現させたのでループを抜ける
+                            break;
+                        }
+                    }
+                }
+
                 //パスを一旦閉じる
                 ctx.closePath();
             }
@@ -192,6 +218,36 @@ window.onload = function () {
         ctx.fillStyle = ENEMY_COLOR;
 
         //エネミーを描く
+        ctx.fill();
+
+        // - エネミーショット ----------------------------------------------------
+        //パスの設定を開始
+        ctx.beginPath();
+
+        //全てのエネミーショットを調査する
+        for(i = 0; i < ENEMY_SHOT_MAX_COUNT; i++){
+            //エネミーショットがすでに発射されているかチェック
+            if(enemyShot[i].alive){
+                //エネミーショットを動かす
+                enemyShot[i].move();
+
+                //エネミーショットを描くパスを設定
+                ctx.arc(
+                    enemyShot[i].position.x,
+                    enemyShot[i].position.y,
+                    enemyShot[i].size,
+                    0, Math.PI　* 2, false
+                );
+
+                //パスをいったん閉じる
+                ctx.closePath();
+            }
+        }
+
+        //エネミーショットの色を設定する
+        ctx.fillStyle = ENEMY_SHOT_COLOR;
+
+        //エネミーショットを描く
         ctx.fill();
 
         //フラグにより再帰呼び出し
