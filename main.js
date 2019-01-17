@@ -208,7 +208,6 @@ window.onload = function () {
                         }
                     }
                 }
-
                 //パスを一旦閉じる
                 ctx.closePath();
             }
