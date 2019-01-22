@@ -341,7 +341,7 @@ window.onload = function () {
             };
 
         // HTML を更新
-        info.innerHTML = 'SCORE:' + (score * 100) + ' ' + message + '<br>' + title;
+        info.innerHTML = message + '<br>' + 'SCORE:' + (score * 100) + '<br>' + title;
         
         //フラグにより再帰呼び出し
         /**

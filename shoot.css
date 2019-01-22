@@ -2,3 +2,7 @@ canvas{
   border: 1px solid skyblue;
   background-color: lightcyan;
 }
+
+body{
+  background-color: lightyellow;
+}
