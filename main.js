@@ -24,6 +24,9 @@ var ENEMY_COLOR = 'rgba(255, 0, 0, 0.75)';
 var ENEMY_MAX_COUNT = 10;
 var ENEMY_SHOT_COLOR = 'rgba(255, 0, 255, 0.75)';
 var ENEMY_SHOT_MAX_COUNT = 100;
+var BOSS_COLOR = 'rgba(128, 128, 128, 0.75)';
+var BOSS_BIT_COLOR = 'rgba(64, 64, 64, 0.75)';
+var BOSS_BIT_COUNT = 5;
 
 //- main ----------------------------------------------------
 window.onload = function () {
@@ -37,6 +40,10 @@ window.onload = function () {
     screenCanvas = document.getElementById('screen');
     screenCanvas.width = 256; //横幅を256ピクセルに変更
     screenCanvas.height = 256; //縦幅を256ピクセルに変更
+
+    // 自機の初期位置を修正
+    mouse.x = screenCanvas.width / 2;
+    mouse.y = screenCanvas.height -20;
 
     //2dコンテキスト
     ctx = screenCanvas.getContext('2d');
@@ -73,6 +80,15 @@ window.onload = function () {
     var enemyShot = new Array(ENEMY_SHOT_MAX_COUNT);
     for (i = 0; i < ENEMY_SHOT_MAX_COUNT; i++) {
         enemyShot[i] = new EnemyShot();
+    }
+
+    // ボスの初期化
+    var boss = new Boss();
+
+    // ボスのビットを初期化
+    var bit = new Array(BOSS_BIT_COUNT);
+    for(i = 0; i <BOSS_BIT_COUNT; i++){
+        bit[i] = new Bit();
     }
 
     //ループ処理(レンダリング処理）を呼び出す
@@ -153,7 +169,7 @@ window.onload = function () {
 
         // エネミーの出現管理-----------------------------------------------------
         //100フレームに一度出現させる
-        if (counter % 100 === 0) {
+        if (counter % 100 === 0 && counter < 1000) {
             // 全てのエネミーを調査する
             for (i = 0; i < ENEMY_MAX_COUNT; i++) {
                 // エネミーの生存フラグをチェック
@@ -170,6 +186,23 @@ window.onload = function () {
                     // １体出現させたのでループを抜ける
                     break;
                 }
+            }
+        }else if(counter === 1000){
+            // 1000 フレーム目にボスを出現させる
+            //x座標はスクリーンの半分の位置
+            p.x = screenCanvas.width / 2;
+            //y座標はボスサイズが５０のため−80の位置から（画面上から30だけボスが見えてるとこスタート
+            p.y = -80;
+            //boss.jsのset メソッド呼び出し.座標p、サイズ50、ライフ30
+            boss.set(p, 50, 30);
+
+            // 同時にビットも出現させる
+            for(i = 0; i < BOSS_BIT_COUNT; i++){
+                j = 360 / BOSS_BIT_COUNT;
+                //bitのsetメソッド呼び出し
+                //引数にparentをboss,サイズ15、ライフ5、パラメータi*j
+                bit[i].set(boss, 15, 5, i * j);
+                console.log('ボスが現れた');
             }
         }
 
@@ -276,6 +309,79 @@ window.onload = function () {
                 //エネミーショットを描く
                 ctx.fill();
 
+            // ボス ---------------------------------------------------
+            //お明日の設定を開始
+            ctx.beginPath();
+
+            //ボスの出現フラグをチェック　
+            if(boss.alive){
+                // ボスを動かす
+                boss.move();
+
+                // ボスを描くパスを設定
+                ctx.arc(
+                    boss.position.x,
+                    boss.position.y,
+                    boss.size,
+                    0, Math.PI * 2, false
+                );
+
+                //パスをいったん閉じる
+                ctx.closePath();
+            }
+
+            // ボスの色を設定する
+            ctx.fillStyle = BOSS_COLOR;
+
+            //ボスを描く
+            ctx.fill();
+
+            // ビット------------------------------------------------------
+            //パスの設定を開始
+            ctx.beginPath();
+
+            //全てのビットを調査する
+            for(i = 0; i < BOSS_BIT_COUNT; i++){
+                // ビットの出現フラグをチェック
+                if(bit[i].alive){
+                    //ビットを動かす
+                    bit[i].move();
+
+                    //ビットを描くパスを設定
+                    ctx.arc(
+                        bit[i].position.x,
+                        bit[i].position.y,
+                        bit[i].size,
+                        0, Math.PI * 2, false
+                    );
+
+                    //ショットを打つかどうかパラメータの値からチェック
+                    if(bit[i].param % 25 === 0){
+                        //エネミーショットを調査する
+                        for(j = 0; j < ENEMY_SHOT_MAX_COUNT; j++){
+                            if(!enemyShot[j].alive){
+                                // エネミーショットを新規にセットする
+                                p = bit[i].position.distance(chara.position);
+                                p.normalize();
+                                enemyShot[j].set(bit[i].position, p, 4, 1.5);
+
+                                //１個出現させたのでループを抜ける
+                                break;
+                            }
+                        }
+                    }
+
+                    //パスを一旦閉じる
+                    ctx.closePath();
+                }
+            }
+
+            //ビットの色を設定する
+            ctx.fillStyle = BOSS_BIT_COLOR;
+
+            //ビットを描く
+            ctx.fill();
+
                 //衝突判定 -------------------------------------
                 //すべての自機ショットを調査する
                 for (i = 0; i < CHARA_SHOT_MAX_COUNT; i++) {
@@ -300,9 +406,50 @@ window.onload = function () {
                                 }
                             }
                         }
+
+                        //自機ショットとボスビットとの衝突判定
+                        for(j = 0; j < BOSS_BIT_COUNT; j++){
+                            // ビットの生存フラグをチェック
+                            if(bit[j].alive){
+                                // ビットと自機ショットとの距離を計測
+                                p = bit[j].position.distance(charaShot[i].position);
+                                if(p.length() < bit[j].size){
+                                    //衝突していたら耐久値をデクリメントする
+                                    bit[j].life--;
+
+                                    //自機ショットの生存フラグを降ろす
+                                    if(bit[j].life < 0){
+                                        bit[j].alive = false;
+                                        score += 3;
+                                    }
+
+                                    //衝突があったのでループを抜ける
+                                    break;
+                                }
+                        }
+                    }
+                    //ボスの生存フラグをチェック
+                    if(boss.alive){
+                        //自機ショットとボスとの衝突判定
+                        p = boss.position.distance(charaShot[i].position);
+                        if(p.length() < boss.size){
+                            // 衝突していたら耐久値をデクリメントする
+                            boss.life--;
+
+                            //自機ショットの生存フラグを降ろす
+                            charaShot[i].alive = false;
+                            
+                            //耐久値がマイナスになったらクリア
+                            if(boss.life < 0){
+                                score += 10;
+                                run = false;
+                                message = 'CEAR!!';
+                                console.log('clear');
+                            }
+                        }
                     }
                 }
-
+            }
                 //自機とエネミーショットとの衝突判定
                 for (i = 0; i < ENEMY_SHOT_MAX_COUNT; i++) {
                     // エネミーショットの生存フラグをチェック
