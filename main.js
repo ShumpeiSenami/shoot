@@ -9,10 +9,12 @@
 var screenCanvas, info;
 var run = true;
 var fps = 1000 / 30; //1秒に約30回更新されるゲーム
-var mouse = new Point(); //変数mouseにはcommo.jsで記述したPointクラスを利用してマウスカーソルの座標1を格納するためのインスタンスを作っておく
+var mouse = new Point(); //変数mouseにはcommon.jsで記述したPointクラスを利用してマウスカーソルの座標1を格納するためのインスタンスを作っておく
 var ctx;
 var fire = false;
+var score = 0;
 var counter = 0;
+var message = '';
 
 // -const -----------------------------------------------------
 var CHARA_COLOR = 'rgba(0, 0, 255, 0.75)';
@@ -28,6 +30,8 @@ window.onload = function () {
     //汎用変数
     var i, j;
     var p = new Point();
+
+    
 
     //スクリーンの初期化
     screenCanvas = document.getElementById('screen');
@@ -59,13 +63,13 @@ window.onload = function () {
         charaShot[i] = new CharacterShot();
     }
 
-    //敵機初期化
+    // エネミー初期化
     var enemy = new Array(ENEMY_MAX_COUNT);
     for (i = 0; i < ENEMY_MAX_COUNT; i++) {
         enemy[i] = new Enemy();
     }
 
-    //敵機の弾の初期化
+    // エネミーショットの初期化
     var enemyShot = new Array(ENEMY_SHOT_MAX_COUNT);
     for (i = 0; i < ENEMY_SHOT_MAX_COUNT; i++) {
         enemyShot[i] = new EnemyShot();
@@ -75,9 +79,6 @@ window.onload = function () {
     (function () {
         //カウンタをインクリメント
         counter++;
-
-        //HTML を更新
-        info.innerHTML = mouse.x + ':' + mouse.y;
 
         // screen クリア
         ctx.clearRect(0, 0, screenCanvas.width, screenCanvas.height);
@@ -108,24 +109,6 @@ window.onload = function () {
         if (fire) {
             // すべての自機ショットを調査する
             for (i = 0; i < CHARA_SHOT_MAX_COUNT; i++) {
-                // 自機ショットとエネミーの衝突判定
-                for(j = 0; j < ENEMY_MAX_COUNT; j++){
-                    //エネミーの生存フラグをチェック
-                    if(enemy[j].alive){
-                        //エネミーと自機ショットとの距離を計測
-                        p = enemy[j].position.distance(charaShot[i].position);
-                        if(p.length() < enemy[j].size){
-                            //衝突していたら生存フラグを降ろす
-                            enemy[j].alive = false;
-                            charaShot[i].alive = false;
-                            console.log("弾がヒットしました");
-
-                            //衝突があったのでループを抜ける
-                            break;
-                        }
-                    }
-                }
-
                 // 自機ショットが既に発射されているかチェック
                 if (!charaShot[i].alive) {
                     // 自機ショットを新規にセット
@@ -189,84 +172,177 @@ window.onload = function () {
                 }
             }
         }
-        // エネミー
-        // パスの設定を開始
-        ctx.beginPath();
 
-        // 全てのエネミーを調査する
-        for (i = 0; i < ENEMY_MAX_COUNT; i++) {
-            // エネミーの生存フラグをチェック
-            if (enemy[i].alive) {
-                // エネミーを動かす
-                enemy[i].move();
+        // カウンターの値によってシーン分岐
+        switch (true) {
+            // カウンターが７０より小さい
+            case counter < 60:
+                message = 'READDY...';
+                break;
+            case counter < 70:
+                message = '3';
+                break;
+            case counter < 80:
+                message = '2';
+                break;
+            case counter < 90:
+                message = '1';
+                break;
+        
+            //カウンターが７０以上１００未満
+            case counter < 100:
+                message = 'GO!!';
+                break;
 
-                // エネミーを描くパスを設定
-                ctx.arc(
-                    enemy[i].position.x,
-                    enemy[i].position.y,
-                    enemy[i].size,
-                    0, Math.PI * 2, false
-                );
+            //カウンターが１００以上
+            default:
+                message = '';
 
-                //ショットを打つかどうかパラメータの値からチェック
-                //敵キャラの param プロパティはmoveメソッドが呼ばれるたび＋１される
-                //つまり毎フレーム１づつ増えていく
-                // enemy[i].param % 30 === 0   で３０フレームに一度処理される
-                if (enemy[i].param % 30 === 0) {
-                    // エネミーショットを調査する
-                    for (j = 0; j < ENEMY_SHOT_MAX_COUNT; j++) {
-                        if (!enemyShot[j].alive) {
-                            //エネミーショットを新規にセットする
-                            p = enemy[i].position.distance(chara.position);
-                            p.normalize();
-                            enemyShot[j].set(enemy[i].position, p, 5, 5);
+                // エネミー ------------------------------------------
+                // パスの設定を開始
+                ctx.beginPath();
 
-                            // １個出現させたのでループを抜ける
+                // 全てのエネミーを調査する
+                for (i = 0; i < ENEMY_MAX_COUNT; i++) {
+                    // エネミーの生存フラグをチェック
+                    if (enemy[i].alive) {
+                        // エネミーを動かす
+                        enemy[i].move();
+
+                        // エネミーを描くパスを設定
+                        ctx.arc(
+                            enemy[i].position.x,
+                            enemy[i].position.y,
+                            enemy[i].size,
+                            0, Math.PI * 2, false
+                        );
+
+                        //ショットを打つかどうかパラメータの値からチェック
+                        //敵キャラの param プロパティはmoveメソッドが呼ばれるたび＋１される
+                        //つまり毎フレーム１づつ増えていく
+                        // enemy[i].param % 30 === 0   で３０フレームに一度処理される
+                        if (enemy[i].param % 30 === 0) {
+                            // エネミーショットを調査する
+                            for (j = 0; j < ENEMY_SHOT_MAX_COUNT; j++) {
+                                if (!enemyShot[j].alive) {
+                                    //エネミーショットを新規にセットする
+                                    p = enemy[i].position.distance(chara.position);
+                                    p.normalize();
+                                    enemyShot[j].set(enemy[i].position, p, 5, 5);
+
+                                    // １個出現させたのでループを抜ける
+                                    break;
+                                }
+                            }
+                        }
+                        //パスを一旦閉じる
+                        ctx.closePath();
+                    }
+                }
+
+                //エネミーの色を設定する
+                ctx.fillStyle = ENEMY_COLOR;
+
+                //エネミーを描く
+                ctx.fill();
+
+                // - エネミーショット ----------------------------------------------------
+                //パスの設定を開始
+                ctx.beginPath();
+
+                //全てのエネミーショットを調査する
+                for (i = 0; i < ENEMY_SHOT_MAX_COUNT; i++) {
+                    //エネミーショットがすでに発射されているかチェック
+                    if (enemyShot[i].alive) {
+                        //エネミーショットを動かす
+                        enemyShot[i].move();
+
+                        //エネミーショットを描くパスを設定
+                        ctx.arc(
+                            enemyShot[i].position.x,
+                            enemyShot[i].position.y,
+                            enemyShot[i].size,
+                            0, Math.PI * 2, false
+                        );
+
+                        //パスをいったん閉じる
+                        ctx.closePath();
+                    }
+                }
+
+                //エネミーショットの色を設定する
+                ctx.fillStyle = ENEMY_SHOT_COLOR;
+
+                //エネミーショットを描く
+                ctx.fill();
+
+                //衝突判定 -------------------------------------
+                //すべての自機ショットを調査する
+                for (i = 0; i < CHARA_SHOT_MAX_COUNT; i++) {
+                    //自機ショットの生存フラグをチェック
+                    if (charaShot[i].alive) {
+                        //自機ショットとエネミーとの衝突判定
+                        for (j = 0; j < ENEMY_MAX_COUNT; j++) {
+                            // エネミーの生存フラグをチェック
+                            if (enemy[j].alive) {
+                                // エネミーと自機ショットの距離を計測
+                                p = enemy[j].position.distance(charaShot[i].position);
+                                // エネミーと自機ショットの距離がエネミーのサイズよりも小さい（近ければ）弾が衝突と判定
+                                if (p.length() < enemy[j].size) {
+                                    //衝突したら敵と自機ショットの生存フラグを降ろす
+                                    enemy[j].alive = false;
+                                    charaShot[i].alive = false;
+                                    console.log("敵を倒した");
+                                    //スコアを更新するためにインクリメント
+                                    score++;
+                                    //衝突があったのでループを抜ける
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                //自機とエネミーショットとの衝突判定
+                for (i = 0; i < ENEMY_SHOT_MAX_COUNT; i++) {
+                    // エネミーショットの生存フラグをチェック
+                    if (enemyShot[i].alive) {
+                        // 自機とエネミーショットとの距離を計測
+                        p = chara.position.distance(enemyShot[i].position);
+                        //衝突していたら生存フラグを降ろす
+                        if (p.length() < chara.size) {
+                            chara.alive = false;
+
+                            // 衝突があったのでパラメータを変更してループを抜ける
+                            run = false;
+                            message = 'GAME OVER !!' + '<br>' +'更新ボタンを押して再チャレンジしてね';
+                            console.log("game_over");
                             break;
                         }
                     }
                 }
-                //パスを一旦閉じる
-                ctx.closePath();
-            }
+                
+                break;
         }
 
-        //エネミーの色を設定する
-        ctx.fillStyle = ENEMY_COLOR;
+            switch(true){
+                case score < 2:
+                title = 'Lank:1';
+                break;
+                case score < 3:
+                title = 'Lank:2';
+                break;
+                case score < 5:
+                title = 'Lank:3';
+                break;
+                case score >= 5:
+                title = 'Lank:Master';
+                break;
+            };
 
-        //エネミーを描く
-        ctx.fill();
-
-        // - エネミーショット ----------------------------------------------------
-        //パスの設定を開始
-        ctx.beginPath();
-
-        //全てのエネミーショットを調査する
-        for (i = 0; i < ENEMY_SHOT_MAX_COUNT; i++) {
-            //エネミーショットがすでに発射されているかチェック
-            if (enemyShot[i].alive) {
-                //エネミーショットを動かす
-                enemyShot[i].move();
-
-                //エネミーショットを描くパスを設定
-                ctx.arc(
-                    enemyShot[i].position.x,
-                    enemyShot[i].position.y,
-                    enemyShot[i].size,
-                    0, Math.PI * 2, false
-                );
-
-                //パスをいったん閉じる
-                ctx.closePath();
-            }
-        }
-
-        //エネミーショットの色を設定する
-        ctx.fillStyle = ENEMY_SHOT_COLOR;
-
-        //エネミーショットを描く
-        ctx.fill();
-
+        // HTML を更新
+        info.innerHTML = 'SCORE:' + (score * 100) + ' ' + message + '<br>' + title;
+        
         //フラグにより再帰呼び出し
         /**
          * setTimeoutを用いて無名関数自体を再帰的に呼び出す
