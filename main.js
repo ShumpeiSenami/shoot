@@ -64,10 +64,10 @@ window.onload = function () {
     for (i = 0; i < ENEMY_MAX_COUNT; i++) {
         enemy[i] = new Enemy();
     }
-    
+
     //敵機の弾の初期化
     var enemyShot = new Array(ENEMY_SHOT_MAX_COUNT);
-    for(i = 0; i< ENEMY_SHOT_MAX_COUNT; i++){
+    for (i = 0; i < ENEMY_SHOT_MAX_COUNT; i++) {
         enemyShot[i] = new EnemyShot();
     }
 
@@ -108,6 +108,24 @@ window.onload = function () {
         if (fire) {
             // すべての自機ショットを調査する
             for (i = 0; i < CHARA_SHOT_MAX_COUNT; i++) {
+                // 自機ショットとエネミーの衝突判定
+                for(j = 0; j < ENEMY_MAX_COUNT; j++){
+                    //エネミーの生存フラグをチェック
+                    if(enemy[j].alive){
+                        //エネミーと自機ショットとの距離を計測
+                        p = enemy[j].position.distance(charaShot[i].position);
+                        if(p.length() < enemy[j].size){
+                            //衝突していたら生存フラグを降ろす
+                            enemy[j].alive = false;
+                            charaShot[i].alive = false;
+                            console.log("弾がヒットしました");
+
+                            //衝突があったのでループを抜ける
+                            break;
+                        }
+                    }
+                }
+
                 // 自機ショットが既に発射されているかチェック
                 if (!charaShot[i].alive) {
                     // 自機ショットを新規にセット
@@ -162,7 +180,7 @@ window.onload = function () {
                     var enemySize = 15;
                     p.x = -enemySize + (screenCanvas.width + enemySize * 2) * j
                     p.y = screenCanvas.height / 2;
-                    
+
                     // エネミーを新規にセット
                     enemy[i].set(p, enemySize, j);
 
@@ -191,13 +209,13 @@ window.onload = function () {
                 );
 
                 //ショットを打つかどうかパラメータの値からチェック
-                  //敵キャラの param プロパティはmoveメソッドが呼ばれるたび＋１される
-                  //つまり毎フレーム１づつ増えていく
-                  // enemy[i].param % 30 === 0   で３０フレームに一度処理される
-                if(enemy[i].param % 30 === 0){
+                //敵キャラの param プロパティはmoveメソッドが呼ばれるたび＋１される
+                //つまり毎フレーム１づつ増えていく
+                // enemy[i].param % 30 === 0   で３０フレームに一度処理される
+                if (enemy[i].param % 30 === 0) {
                     // エネミーショットを調査する
-                    for(j =0; j< ENEMY_SHOT_MAX_COUNT; j++){
-                        if(!enemyShot[j].alive){
+                    for (j = 0; j < ENEMY_SHOT_MAX_COUNT; j++) {
+                        if (!enemyShot[j].alive) {
                             //エネミーショットを新規にセットする
                             p = enemy[i].position.distance(chara.position);
                             p.normalize();
@@ -224,9 +242,9 @@ window.onload = function () {
         ctx.beginPath();
 
         //全てのエネミーショットを調査する
-        for(i = 0; i < ENEMY_SHOT_MAX_COUNT; i++){
+        for (i = 0; i < ENEMY_SHOT_MAX_COUNT; i++) {
             //エネミーショットがすでに発射されているかチェック
-            if(enemyShot[i].alive){
+            if (enemyShot[i].alive) {
                 //エネミーショットを動かす
                 enemyShot[i].move();
 
@@ -235,7 +253,7 @@ window.onload = function () {
                     enemyShot[i].position.x,
                     enemyShot[i].position.y,
                     enemyShot[i].size,
-                    0, Math.PI　* 2, false
+                    0, Math.PI * 2, false
                 );
 
                 //パスをいったん閉じる

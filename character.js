@@ -103,16 +103,16 @@ Enemy.prototype.move = function () {
 };
 
 // - 敵機の弾を扱うクラス -------------------------------------------
-function EnemyShot(){
+function EnemyShot() {
     this.position = new Point();
     this.vector = new Point();
     this.size = 0;
     this.speed = 0;
-    this.alive =false;
+    this.alive = false;
 }
 
 //set メソッド
-EnemyShot.prototype.set = function(p, vector, size, speed){
+EnemyShot.prototype.set = function (p, vector, size, speed) {
     //座標、ベクトルをセット
     this.position.x = p.x;
     this.position.y = p.y;
@@ -128,18 +128,18 @@ EnemyShot.prototype.set = function(p, vector, size, speed){
 };
 
 //move メソッド
-EnemyShot.prototype.move = function(){
+EnemyShot.prototype.move = function () {
     //座標をベクトルに応じて speed 分だけ移動させる(ベクトルの大きさは1にcommon.jsのnormalizeメソッドで調整されている)
     this.position.x += this.vector.x * this.speed;
     this.position.y += this.vector.y * this.speed;
 
     //一定以上の座標に到達していたら生存フラグを降ろす
-    if(
+    if (
         this.position.x < -this.size ||
         this.position.y < -this.size ||
         this.position.x > this.size + screenCanvas.width ||
         this.position.y > this.size + screenCanvas.height
-    ){
-          this.alive = false;
-    } 
-  };
+    ) {
+        this.alive = false;
+    }
+};
